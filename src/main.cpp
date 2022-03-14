@@ -11,9 +11,19 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "../inc/shader.hpp"
-
+#include "../inc/physics.hpp"
 
 void key_callback(GLFWwindow * window, int key, int scancode, int action, int mods);
+
+float prev_time = 0;
+float delta_time = 0;
+
+void calc_delta_time()
+{
+    float current_time = glfwGetTime();
+    delta_time = current_time - prev_time;
+    prev_time = current_time;
+}
 
 int main()
 {
@@ -112,37 +122,39 @@ int main()
       glm::vec3(-0.5f, -0.3f, 0.0f),
     };
 
+    Circle circle(-0.95f, -0.95f, 0.5f, 1.0f, 0.0f, -0.6f);
+
     glClearColor(0.043f, 0.043f, 0.112f, 1.0f);
 
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        for (size_t i = 0; i != 10; ++i)
-        {
-            // transformations (scale -> rotate -> translate, read from down to up)
-            glm::mat4 model_matrix = glm::mat4(1.0f);
-            model_matrix = glm::translate(model_matrix, circles[i]);
-            // compensation from screen resolution
-            model_matrix = glm::scale(model_matrix, 
-                                      glm::vec3(static_cast<float>(mode->height)/mode->width, 1.0f, 1.0f));
+        // transformations (scale -> rotate -> translate, read from down to up)
+        glm::mat4 model_matrix = glm::mat4(1.0f);
+        model_matrix = glm::translate(model_matrix, glm::vec3(circle.getX(), circle.getY(), 0.0f));
+        // compensation from screen resolution
+        model_matrix = glm::scale(model_matrix, 
+                                  glm::vec3(static_cast<float>(mode->height)/mode->width, 1.0f, 1.0f));
 
-            glUniformMatrix4fv(glGetUniformLocation(shader.getID(), "model_matrix"),
-                               1,
-                               GL_FALSE,
-                               glm::value_ptr(model_matrix));
+        glUniformMatrix4fv(glGetUniformLocation(shader.getID(), "model_matrix"),
+                           1,
+                           GL_FALSE,
+                           glm::value_ptr(model_matrix));
 
-            shader.use();
-            glBindTexture(GL_TEXTURE_2D, texture);
-            glBindVertexArray(VAO);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-            glBindVertexArray(0);            
-        }
+        shader.use();
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);            
 
         glfwSwapBuffers(window);
 
         glfwPollEvents();
         glfwSetKeyCallback(window, key_callback);
+        calc_delta_time();
+
+        circle.move();
     }
 
     glDeleteVertexArrays(1, &VAO);

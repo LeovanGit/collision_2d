@@ -5,6 +5,7 @@
 # Compilation
 
 ```
+mkdir tmp
 cd tmp
 cmake ..
 make
