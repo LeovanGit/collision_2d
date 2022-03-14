@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include "../inc/shader.hpp"
 
 void key_callback(GLFWwindow * window, int key, int scancode, int action, int mods);
 
@@ -24,21 +25,54 @@ int main()
     // init glad
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+    float vertices[] =
+    {
+        -0.5f, -0.5f, 0.0f,
+        -0.5f,  0.5f, 0.0f,
+         0.5f,  0.5f, 0.0f,
+
+         0.5f,  0.5f, 0.0f,
+         0.5f, -0.5f, 0.0f,
+        -0.5f, -0.5f, 0.0f
+    };
+
+    // Vertex Buffer Objects (stores vertices in GPU memory)
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // Vertex Arrays Objects (stores VBO attributes condition)
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    
+    // set attributes
+    glBindVertexArray(VAO);    
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0); // unbind
+
+    Shader shader("../src/shaders/fragment.frag", "../src/shaders/vertex.vert");
+
+    glClearColor(0.043f, 0.043f, 0.112f, 1.0f);
 
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // draw
-        
+        shader.Use();
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+
         glfwSwapBuffers(window);
 
         glfwPollEvents();
         glfwSetKeyCallback(window, key_callback);
     }
 
-    // glfwDestroyWindow(window); // included in glfwTerminate()
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
     glfwTerminate();
 
     return 0;
@@ -48,4 +82,10 @@ void key_callback(GLFWwindow * window, int key, int scancode, int action, int mo
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    // wiremode
+    if (key == GLFW_KEY_R && action == GLFW_PRESS)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    if (key == GLFW_KEY_R && action == GLFW_RELEASE)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
