@@ -6,6 +6,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../lib/stb_image.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "../inc/shader.hpp"
 
 
@@ -34,13 +38,13 @@ int main()
     float vertices[] =
     {
         // vertices_coords   // texture_coords
-        -0.1f, -0.1f, 0.0f, 0.0f, 0.0f,
-        -0.1f,  0.1f, 0.0f, 0.0f, 1.0f,
-         0.1f,  0.1f, 0.0f, 1.0f, 1.0f,
+        -0.05f, -0.05f, 0.0f, 0.0f, 0.0f,
+        -0.05f,  0.05f, 0.0f, 0.0f, 1.0f,
+         0.05f,  0.05f, 0.0f, 1.0f, 1.0f,
 
-         0.1f,  0.1f, 0.0f, 1.0f, 1.0f,
-         0.1f, -0.1f, 0.0f, 1.0f, 0.0f,
-        -0.1f, -0.1f, 0.0f, 0.0f, 0.0f
+         0.05f,  0.05f, 0.0f, 1.0f, 1.0f,
+         0.05f, -0.05f, 0.0f, 1.0f, 0.0f,
+        -0.05f, -0.05f, 0.0f, 0.0f, 0.0f
     };
     // texture_coords starts from the left down corner!
 
@@ -76,11 +80,11 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // load texture image
-    int t_width, t_height, nrChannels;
+    int t_width, t_height, nr_channels;
     unsigned char * texture_data = stbi_load("../assets/circle.png", 
                                              &t_width, 
                                              &t_height, 
-                                             &nrChannels, 
+                                             &nr_channels, 
                                              0);
 
     // bind texture image with texture
@@ -94,17 +98,46 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    glm::vec3 circles[]
+    {
+      glm::vec3(0.0f, 0.0f, 0.0f),
+      glm::vec3(0.5f, 0.5f, 0.0f),
+      glm::vec3(-0.5f, -0.5f, 0.0f),
+      glm::vec3(0.2f, 0.2f, 0.0f),
+      glm::vec3(0.2f, -0.5f, 0.0f),
+      glm::vec3(0.0f, 0.8f, 0.0f),
+      glm::vec3(0.3f, 0.0f, 0.0f),
+      glm::vec3(0.5f, -0.8f, 0.0f),
+      glm::vec3(-0.5f, 0.2f, 0.0f),
+      glm::vec3(-0.5f, -0.3f, 0.0f),
+    };
+
     glClearColor(0.043f, 0.043f, 0.112f, 1.0f);
 
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        shader.Use();
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glBindVertexArray(0);
+        for (size_t i = 0; i != 10; ++i)
+        {
+            // transformations (scale -> rotate -> translate, read from down to up)
+            glm::mat4 model_matrix = glm::mat4(1.0f);
+            model_matrix = glm::translate(model_matrix, circles[i]);
+            // compensation from screen resolution
+            model_matrix = glm::scale(model_matrix, 
+                                      glm::vec3(static_cast<float>(mode->height)/mode->width, 1.0f, 1.0f));
+
+            glUniformMatrix4fv(glGetUniformLocation(shader.getID(), "model_matrix"),
+                               1,
+                               GL_FALSE,
+                               glm::value_ptr(model_matrix));
+
+            shader.use();
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glBindVertexArray(VAO);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glBindVertexArray(0);            
+        }
 
         glfwSwapBuffers(window);
 

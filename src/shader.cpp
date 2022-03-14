@@ -68,6 +68,6 @@ void Shader::checkErrors(Type type, unsigned int id)
     }
 }
 
-void Shader::Use() { glUseProgram(id); }
+void Shader::use() { glUseProgram(id); }
 
 unsigned int Shader::getID() { return this->id; }

@@ -15,7 +15,7 @@ public:
     Shader(std::string frag_path, std::string vert_path);
     std::string readFromFile(std::string path);
     void checkErrors(Type type, unsigned int id = 0);
-    void Use();
+    void use();
     unsigned int getID();
 
 private:
