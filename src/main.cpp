@@ -15,6 +15,11 @@
 
 void key_callback(GLFWwindow * window, int key, int scancode, int action, int mods);
 
+bool pause = false;
+
+// screen resolution compensation
+float aspect = 1.0f;
+
 float prev_time = 0;
 float delta_time = 0;
 
@@ -41,6 +46,11 @@ int main()
     // create a fullscreen window
     GLFWwindow * window = glfwCreateWindow(mode->width, mode->height, "Collision demo", monitor, nullptr);
     glfwMakeContextCurrent(window);
+
+    aspect = static_cast<float>(mode->height) / mode->width;
+    
+    // hide mouse cursor
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     // init glad
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -108,21 +118,47 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glm::vec3 circles[]
+    Ball balls[] =
     {
-      glm::vec3(0.0f, 0.0f, 0.0f),
-      glm::vec3(0.5f, 0.5f, 0.0f),
-      glm::vec3(-0.5f, -0.5f, 0.0f),
-      glm::vec3(0.2f, 0.2f, 0.0f),
-      glm::vec3(0.2f, -0.5f, 0.0f),
-      glm::vec3(0.0f, 0.8f, 0.0f),
-      glm::vec3(0.3f, 0.0f, 0.0f),
-      glm::vec3(0.5f, -0.8f, 0.0f),
-      glm::vec3(-0.5f, 0.2f, 0.0f),
-      glm::vec3(-0.5f, -0.3f, 0.0f),
-    };
+        // weight  radius  position              speed              acceleration
 
-    Circle circle(-0.95f, -0.95f, 0.5f, 1.0f, 0.0f, -0.6f);
+        // just crazy ball
+        Ball(0.5f, 0.0105f, Vec2(-0.95f, 0.5f), Vec2(0.25f, -0.25f), Vec2(0.0f, 0.0f)),
+
+        // ball with gravity
+        Ball(1.5f, 0.0315f, Vec2(0.95f, 0.5f), Vec2(-0.2f, -0.2f), Vec2(0.0f, -0.5f)),
+
+        // two big but one without speed
+        Ball(2.0f, 0.042f, Vec2(-0.5f, -0.5f), Vec2(0.5f, 0.0f), Vec2(0.0f, 0.0f)),
+        Ball(2.0f, 0.042f, Vec2( 0.5f, -0.5f), Vec2(0.0f, 0.0f), Vec2(0.0f, 0.0f)),
+
+        // two big with equal speeds
+        Ball(2.0f, 0.042f, Vec2(-0.5f, -0.4f), Vec2( 0.1f, 0.0f), Vec2(0.0f, 0.0f)),
+        Ball(2.0f, 0.042f, Vec2( 0.5f, -0.4f), Vec2(-0.1f, 0.0f), Vec2(0.0f, 0.0f)),
+
+        // small and big
+        Ball(1.0f, 0.021f, Vec2(-0.5f, -0.3f), Vec2( 0.3f, 0.0f), Vec2(0.0f, 0.0f)),
+        Ball(2.0f, 0.042f, Vec2( 0.5f, -0.3f), Vec2(-0.1f, 0.0f), Vec2(0.0f, 0.0f)),
+
+        // three in a row
+        Ball(1.0f, 0.021f, Vec2( 0.0f, -0.2f), Vec2( 0.0f, 0.0f), Vec2(0.0f, 0.0f)),
+        Ball(1.0f, 0.021f, Vec2(-0.5f, -0.2f), Vec2( 0.3f, 0.0f), Vec2(0.0f, 0.0f)),
+        Ball(2.0f, 0.042f, Vec2( 0.5f, -0.2f), Vec2(-0.3f, 0.0f), Vec2(0.0f, 0.0f)),
+
+        // vertical
+        Ball(1.0f, 0.021f, Vec2(-0.9f, 0.0f), Vec2(0.0f, -0.2f), Vec2(0.0f, 0.0f)),
+        Ball(1.0f, 0.021f, Vec2(-0.9f, -0.3f), Vec2(0.0f, 0.1f), Vec2(0.0f, 0.0f)),
+        Ball(3.0f, 0.063f, Vec2(-0.9f, 0.9f), Vec2(0.0f, -0.05f), Vec2(0.0f, 0.0f)),
+
+        // non-central with equal speeds
+        Ball(2.0f, 0.042f, Vec2(-0.3f, 0.9f), Vec2(0.3f, 0.0f), Vec2(0.0f, 0.0f)),
+        Ball(2.0f, 0.042f, Vec2(0.3f, 0.9f - 0.042f), Vec2(-0.3f, 0.0f), Vec2(0.0f, 0.0f)),
+
+        // non-central, but one without speed
+        Ball(2.0f, 0.042f, Vec2(-0.3f, 0.7f), Vec2(0.45f, 0.0f), Vec2(0.0f, 0.0f)),
+        Ball(2.0f, 0.042f, Vec2(0.3f, 0.7f - 0.042f), Vec2(0.0f, 0.0f), Vec2(0.0f, 0.0f)),
+
+    };
 
     glClearColor(0.043f, 0.043f, 0.112f, 1.0f);
 
@@ -130,31 +166,52 @@ int main()
     {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // transformations (scale -> rotate -> translate, read from down to up)
-        glm::mat4 model_matrix = glm::mat4(1.0f);
-        model_matrix = glm::translate(model_matrix, glm::vec3(circle.getX(), circle.getY(), 0.0f));
-        // compensation from screen resolution
-        model_matrix = glm::scale(model_matrix, 
-                                  glm::vec3(static_cast<float>(mode->height)/mode->width, 1.0f, 1.0f));
+        // draw
+        for (size_t i = 0, size = sizeof(balls) / sizeof(Ball); i != size; i++)
+        {
+            shader.use();
+            // transformations (scale -> rotate -> translate, read from down to up)
+            glm::mat4 model_matrix = glm::mat4(1.0f);
+            model_matrix = glm::translate(model_matrix, glm::vec3(balls[i].getPosition().getX(),
+                                                                  balls[i].getPosition().getY() / aspect,
+                                                                  0.0f));
+            // size depends on weight
+            model_matrix = glm::scale(model_matrix, glm::vec3(balls[i].getWeight()));
+            // compensation from screen resolution
+            model_matrix = glm::scale(model_matrix, 
+                                      glm::vec3(aspect, 1.0f, 1.0f));
 
-        glUniformMatrix4fv(glGetUniformLocation(shader.getID(), "model_matrix"),
-                           1,
-                           GL_FALSE,
-                           glm::value_ptr(model_matrix));
+            glUniformMatrix4fv(glGetUniformLocation(shader.getID(), "model_matrix"),
+                               1,
+                               GL_FALSE,
+                               glm::value_ptr(model_matrix));
 
-        shader.use();
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glBindVertexArray(0);            
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glBindVertexArray(VAO);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glBindVertexArray(0);
+
+            for (size_t j = 0; j != size; ++j)
+            {
+                // self collision
+                if (i == j) continue;
+
+                if (balls[i].checkCollision(balls[j]))
+                {
+                    // std::cout << "collision detected\n";
+                    calculateSpeedAfterCollision(balls[i], balls[j]);
+                }
+            }
+
+            if (!pause) balls[i].move();
+        }
 
         glfwSwapBuffers(window);
 
         glfwPollEvents();
         glfwSetKeyCallback(window, key_callback);
         calc_delta_time();
-
-        circle.move();
+        // std::cout << "FPS: " << int(1 / delta_time) << "\n";
     }
 
     glDeleteVertexArrays(1, &VAO);
@@ -168,6 +225,12 @@ void key_callback(GLFWwindow * window, int key, int scancode, int action, int mo
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    // pause
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+        pause = true;
+    if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE)
+        pause = false;
 
     // wiremode
     if (key == GLFW_KEY_R && action == GLFW_PRESS)
