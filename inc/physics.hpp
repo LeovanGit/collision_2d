@@ -1,7 +1,7 @@
 #ifndef PHYSICS_HPP
 #define PHYSICS_HPP
 
-#include "../inc/vector2.hpp"
+#include "vector2.hpp"
 
 class Ball
 {

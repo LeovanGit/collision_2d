@@ -1,4 +1,4 @@
-#include "../inc/physics.hpp"
+#include "physics.hpp"
 #include <cmath>
 
 extern float delta_time;

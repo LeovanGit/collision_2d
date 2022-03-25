@@ -4,14 +4,14 @@
 #include <GLFW/glfw3.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "../lib/stb_image.h"
+#include "stb_image.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "../inc/shader.hpp"
-#include "../inc/physics.hpp"
+#include "shader.hpp"
+#include "physics.hpp"
 
 void key_callback(GLFWwindow * window, int key, int scancode, int action, int mods);
 

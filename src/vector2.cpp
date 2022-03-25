@@ -1,4 +1,4 @@
-#include "../inc/vector2.hpp"
+#include "vector2.hpp"
 
 Vec2::Vec2(float value) : x(value), y(value) {};
 
