@@ -9,7 +9,7 @@ mkdir tmp
 cd tmp
 cmake ..
 make
-./ex
+./collision
 ```
 
 # Under the hood
